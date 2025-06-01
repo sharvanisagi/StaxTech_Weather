@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#57B5E7',
+            secondary: '#8DD3C7'
+          },
+          borderRadius: {
+            'none': '0px',
+            'sm': '4px',
+            DEFAULT: '8px',
+            'md': '12px',
+            'lg': '16px',
+            'xl': '20px',
+            '2xl': '24px',
+            '3xl': '32px',
+            'full': '9999px',
+            'button': '8px'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-white min-h-screen">
+  <div class="max-w-5xl mx-auto p-6">
+    <div class="flex items-center justify-between mb-8">
+      <div class="flex-1">
+        <div class="relative">
+          <input type="text" id="searchInput" placeholder="Search for a city..." class="w-full pl-10 pr-4 py-2 bg-gray-50 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-gray-400">
+            <i class="ri-search-line"></i>
+          </div>
+          <div id="searchResults" class="search-results">
+          </div>
+        </div>
+      </div>
+      <button id="locationBtn" class="ml-4 p-2 hover:bg-gray-50 rounded-full !rounded-button">
+        <div class="w-5 h-5 flex items-center justify-center">
+          <i class="ri-map-pin-line text-gray-600"></i>
+        </div>
+      </button>
+      <div id="locationModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+        <div class="bg-white p-6 rounded-lg max-w-sm w-full mx-4">
+          <h3 class="text-lg font-semibold mb-2">Location Access</h3>
+          <p class="text-gray-600 mb-4">Allow Weather App to access your location to provide accurate weather information for your area.</p>
+          <div class="flex gap-3">
+            <button id="denyLocationBtn" class="flex-1 px-4 py-2 border border-gray-200 text-gray-600 rounded !rounded-button hover:bg-gray-50">Deny</button>
+            <button id="allowLocationBtn" class="flex-1 px-4 py-2 bg-primary text-white rounded !rounded-button hover:bg-primary/90">Allow</button>
+          </div>
+        </div>
+      </div>
+      <div id="toast" class="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 items-center hidden">
+        <p class="text-gray-600">Location access denied. Please search for your city manually.</p>
+      </div>
+      <label class="switch ml-4">
+        <input type="checkbox">
+        <span class="slider"></span>
+      </label>
+    </div>
+    
+    <div class="weather-gradient rounded-xl p-8 mb-8">
+      <div class="text-center mb-6">
+        <h1 id="locationTitle" class="text-3xl font-semibold mb-2">Loading...</h1>
+        <p id="currentDate" class="text-gray-600">Loading date...</p>
+      </div>
+      <div class="flex items-center justify-center gap-8 mb-8">
+        <div class="text-center">
+          <div id="currentTemp" class="text-6xl font-light mb-2">--°</div>
+          <div id="weatherCondition" class="text-gray-600">Loading...</div>
+        </div>
+        <div class="w-24 h-24 flex items-center justify-center">
+          <i id="weatherIcon" class="ri-question-line text-6xl text-primary"></i>
+        </div>
+      </div>
+      <div class="grid grid-cols-4 gap-4">
+        <div class="text-center p-4 bg-white/60 rounded-lg">
+          <div class="w-6 h-6 flex items-center justify-center mx-auto mb-2">
+            <i class="ri-drop-line text-gray-600"></i>
+          </div>
+          <div class="text-sm text-gray-600">Humidity</div>
+          <div id="humidity" class="font-medium">--%</div>
+        </div>
+        <div class="text-center p-4 bg-white/60 rounded-lg">
+          <div class="w-6 h-6 flex items-center justify-center mx-auto mb-2">
+            <i class="ri-windy-line text-gray-600"></i>
+          </div>
+          <div class="text-sm text-gray-600">Wind</div>
+          <div id="windSpeed" class="font-medium">-- km/h</div>
+        </div>
+        <div class="text-center p-4 bg-white/60 rounded-lg">
+          <div class="w-6 h-6 flex items-center justify-center mx-auto mb-2">
+            <i class="ri-showers-line text-gray-600"></i>
+          </div>
+          <div class="text-sm text-gray-600">Rain</div>
+          <div id="precipitation" class="font-medium">--%</div>
+        </div>
+        <div class="text-center p-4 bg-white/60 rounded-lg">
+          <div class="w-6 h-6 flex items-center justify-center mx-auto mb-2">
+            <i class="ri-temp-hot-line text-gray-600"></i>
+          </div>
+          <div class="text-sm text-gray-600">Feels like</div>
+          <div id="feelsLike" class="font-medium">--°</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">Hourly Forecast</h2>
+      <div class="hourly-scroll overflow-x-auto">
+        <div id="hourlyForecast" class="flex gap-4 pb-4" style="min-width: max-content;">
+          <!-- Hourly forecast will be inserted here -->
+        </div>
+      </div>
+    </div>
+    
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">7-Day Forecast</h2>
+      <div id="dailyForecast" class="space-y-4">
+        <!-- Daily forecast will be inserted here -->
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-4">
+      <div class="p-6 bg-gray-50 rounded-lg">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-gray-600">UV Index</div>
+          <div class="w-8 h-8 flex items-center justify-center">
+            <i class="ri-sun-line text-xl text-primary"></i>
+          </div>
+        </div>
+        <div id="uvIndex" class="text-2xl font-medium mb-1">--</div>
+        <div id="uvIndexText" class="text-sm text-gray-600">Loading...</div>
+      </div>
+      <div class="p-6 bg-gray-50 rounded-lg">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-gray-600">Sunrise & Sunset</div>
+          <div class="w-8 h-8 flex items-center justify-center">
+            <i class="ri-sun-foggy-line text-xl text-primary"></i>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 flex items-center justify-center">
+              <i class="ri-arrow-up-line text-sm text-gray-400"></i>
+            </div>
+            <div id="sunrise">--:--</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-4 h-4 flex items-center justify-center">
+              <i class="ri-arrow-down-line text-sm text-gray-400"></i>
+            </div>
+            <div id="sunset">--:--</div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 bg-gray-50 rounded-lg">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-gray-600">Air Quality</div>
+          <div class="w-8 h-8 flex items-center justify-center">
+            <i class="ri-leaf-line text-xl text-primary"></i>
+          </div>
+        </div>
+        <div id="airQuality" class="text-2xl font-medium mb-1">--</div>
+        <div id="airQualityText" class="text-sm text-gray-600">Loading...</div>
+      </div>
+      <div class="p-6 bg-gray-50 rounded-lg">
+        <div class="flex items-center justify-between mb-4">
+          <div class="text-gray-600">Visibility</div>
+          <div class="w-8 h-8 flex items-center justify-center">
+            <i class="ri-eye-line text-xl text-primary"></i>
+          </div>
+        </div>
+        <div id="visibility" class="text-2xl font-medium mb-1">-- km</div>
+        <div id="visibilityText" class="text-sm text-gray-600">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
